@@ -53,7 +53,13 @@
     body[data-font=script] h1 { font-weight: 400; font-size: clamp(2.6rem, 9vw, 4.6rem); }
     #tagline { color: var(--text); opacity: .9; font-weight: 600; font-size: 1.1rem; margin: 0 0 32px; letter-spacing: .02em; }
     #out { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-    #out[hidden], #hero[hidden] { display: none; }
+    #out[hidden], #hero[hidden], #mode[hidden] { display: none; }
+    #out[data-mode=days] .unit:not(:first-child) { display: none; }
+    #mode { display: inline-flex; margin-top: 20px; padding: 3px; border-radius: 999px;
+            background: color-mix(in srgb, var(--card) 70%, transparent); }
+    #mode button { background: transparent; color: var(--on-card); padding: 6px 16px; border-radius: 999px;
+                   font-size: .85rem; font-weight: 600; opacity: .75; }
+    #mode button[aria-pressed=true] { background: var(--accent); color: var(--bg-to); opacity: 1; }
     .unit {
       background: var(--card); border-radius: 16px; padding: 18px 12px; min-width: 110px;
       border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
@@ -99,6 +105,10 @@
     <div class="unit"><div class="num" id="h">0</div><div class="lbl">Hours</div></div>
     <div class="unit"><div class="num" id="m">0</div><div class="lbl">Minutes</div></div>
     <div class="unit"><div class="num" id="s">0</div><div class="lbl">Seconds</div></div>
+  </div>
+  <div id="mode" role="group" aria-label="Countdown detail" hidden>
+    <button type="button" data-mode="days">Days</button>
+    <button type="button" data-mode="full">Full</button>
   </div>
   <p id="msg"></p>
 </main>
@@ -232,9 +242,23 @@
     }
   }
 
+  // "days" shows only a rounded-up day count (like the widget); "full" adds hours, minutes and seconds.
+  let mode = "full";
+  try { mode = localStorage.getItem("countdown-mode") || "full"; } catch {}
+
+  function setMode(next) {
+    mode = next;
+    try { localStorage.setItem("countdown-mode", mode); } catch {}
+    $("out").dataset.mode = mode;
+    document.querySelectorAll("#mode button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.mode === mode));
+    if (end) tick();
+  }
+  document.querySelectorAll("#mode button").forEach((b) => b.addEventListener("click", () => setMode(b.dataset.mode)));
+  setMode(mode);
+
   function tick() {
     const left = Math.max(0, Math.round((end - Date.now()) / 1000));
-    $("d").textContent = Math.floor(left / 86400);
+    $("d").textContent = mode === "days" ? Math.ceil(left / 86400) : Math.floor(left / 86400);
     $("h").textContent = Math.floor(left % 86400 / 3600);
     $("m").textContent = Math.floor(left % 3600 / 60);
     $("s").textContent = left % 60;
@@ -248,12 +272,13 @@
     // Midnight at the start of the chosen day, in the viewer's local time zone.
     const target = new Date(day + "T00:00");
     const seconds = Math.round((target - Date.now()) / 1000);
-    if (seconds < 0) { $("out").hidden = true; $("msg").textContent = "That date is in the past. Pick a future date."; return; }
+    if (seconds < 0) { $("out").hidden = true; $("mode").hidden = true; $("msg").textContent = "That date is in the past. Pick a future date."; return; }
     applyTheme(themeFor(occasion), target.getFullYear());
     $("title").textContent = occasion;
     document.title = occasion + " countdown";
     end = Date.now() + seconds * 1000;
     $("out").hidden = false;
+    $("mode").hidden = false;
     $("msg").textContent = "until " + target.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
     tick();
     timer = setInterval(tick, 1000);

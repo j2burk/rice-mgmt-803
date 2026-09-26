@@ -9,6 +9,9 @@
 //   4. Long-press the new widget -> "Edit Widget" -> set Script to
 //      "Countdown" -> set Parameter to "Occasion,MM/DD/YYYY",
 //      e.g.  Christmas,12/25/2026
+//   5. Optional: add ",full" to show days, hours and minutes instead of
+//      just days, e.g.  Christmas,12/25/2026,full  (",days" or nothing
+//      shows days only, rounded up).
 //
 // The widget calls the live countdown app (rice-mgmt-803.onrender.com) to
 // get a Claude-designed theme for the occasion, same as the web app. iOS
@@ -22,14 +25,15 @@ function parseParam(raw) {
   const commaIndex = raw.indexOf(",");
   if (commaIndex === -1) return null;
   const occasion = raw.slice(0, commaIndex).trim();
-  const dateStr = raw.slice(commaIndex + 1).trim();
+  const [dateStr = "", modeStr = ""] = raw.slice(commaIndex + 1).split(",").map((s) => s.trim());
   if (!occasion || !dateStr) return null;
+  const mode = modeStr.toLowerCase() === "full" ? "full" : "days";
   const match = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if (!match) return null;
   const [, month, day, year] = match;
   const date = new Date(Number(year), Number(month) - 1, Number(day));
   if (isNaN(date.getTime())) return null;
-  return { occasion, date };
+  return { occasion, date, mode };
 }
 
 async function fetchTheme(occasion, date) {
@@ -43,17 +47,25 @@ async function fetchTheme(occasion, date) {
   }
 }
 
-function formatRemaining(ms) {
-  if (ms <= 0) return { days: 0, done: true };
-  return { days: Math.ceil(ms / 86400000), done: false };
+// "days": rounded-up day count. "full": days, hours and minutes (no seconds,
+// since iOS only refreshes widgets every 15-60 minutes).
+function formatRemaining(ms, mode) {
+  if (ms <= 0) return null;
+  if (mode !== "full") {
+    const days = Math.ceil(ms / 86400000);
+    return `${days} day${days === 1 ? "" : "s"}`;
+  }
+  const mins = Math.floor(ms / 60000);
+  const d = Math.floor(mins / 1440), h = Math.floor((mins % 1440) / 60), m = mins % 60;
+  return d > 0 ? `${d}d ${h}h ${m}m` : `${h}h ${m}m`;
 }
 
 const DEFAULT_THEME = {
   hero: "⏳",
-  bg_from: "#0F172A",
-  bg_to: "#1E293B",
-  text: "#E2E8F0",
-  accent: "#38BDF8",
+  bg_from: "#6D28D9",
+  bg_to: "#DB2777",
+  text: "#FFFFFF",
+  accent: "#FDE047",
 };
 
 async function createWidget() {
@@ -67,13 +79,13 @@ async function createWidget() {
   const parsed = parseParam(args.widgetParameter);
   if (!parsed) {
     widget.backgroundColor = new Color(DEFAULT_THEME.bg_from);
-    const text = widget.addText("Long-press → Edit Widget → set Parameter to:\nOccasion,MM/DD/YYYY\ne.g. Christmas,12/25/2026");
+    const text = widget.addText("Long-press → Edit Widget → set Parameter to:\nOccasion,MM/DD/YYYY\ne.g. Christmas,12/25/2026\nAdd ,full for hours and minutes");
     text.textColor = Color.white();
     text.font = Font.mediumSystemFont(isSmall ? 11 : 13);
     return widget;
   }
 
-  const { occasion, date } = parsed;
+  const { occasion, date, mode } = parsed;
   const result = await fetchTheme(occasion, date);
   const theme = (result && result.theme) || DEFAULT_THEME;
 
@@ -96,8 +108,9 @@ async function createWidget() {
   widget.addSpacer(isSmall ? 2 : 6);
 
   const remainingMs = date.getTime() - Date.now();
-  const { days, done } = formatRemaining(remainingMs);
-  const countText = done ? "🎉 It's here! 🎉" : `${days} day${days === 1 ? "" : "s"}`;
+  const remaining = formatRemaining(remainingMs, mode);
+  const done = remaining === null;
+  const countText = done ? "🎉 It's here! 🎉" : remaining;
   const count = widget.addText(countText);
   count.textColor = new Color(theme.accent || DEFAULT_THEME.accent);
   count.font = Font.boldSystemFont(done ? (isSmall ? 13 : 16) : (isSmall ? 18 : 22));
