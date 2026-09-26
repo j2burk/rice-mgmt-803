@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Countdown</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Playfair+Display:wght@600;800&family=Great+Vibes&family=Bungee&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-from: #0F172A; --bg-to: #1E293B; --text: #E2E8F0; --accent: #38BDF8; --card: #1E293B;
+      --on-card: #E2E8F0; color-scheme: dark;
+      --title-font: "Inter", system-ui, sans-serif; --num-font: "Inter", system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; overflow-x: hidden;
+      font-family: "Inter", system-ui, sans-serif; color: var(--text);
+      background: linear-gradient(160deg, var(--bg-from), var(--bg-to)) fixed;
+      transition: background .6s, color .6s;
+      display: grid; place-items: center;
+    }
+    main { position: relative; z-index: 1; text-align: center; padding: 32px 16px; width: 100%; max-width: 760px; }
+    form { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 40px; }
+    input, button {
+      font: inherit; font-size: 1rem; padding: 10px 14px; border-radius: 10px;
+      border: 1px solid color-mix(in srgb, var(--text) 30%, transparent);
+      background: color-mix(in srgb, var(--card) 85%, transparent); color: var(--on-card);
+      }
+    input[type=text] { flex: 1 1 260px; max-width: 340px; }
+    button { background: var(--accent); color: var(--bg-to); border: none; font-weight: 600; cursor: pointer; }
+    button:disabled { opacity: .6; cursor: wait; }
+    #hero { font-size: clamp(4rem, 14vw, 7rem); line-height: 1; margin-bottom: 8px; }
+    #hero:not(:empty) { animation: pop .7s cubic-bezier(.2, 1.6, .4, 1); }
+    h1 { font-family: var(--title-font); font-size: clamp(2rem, 7vw, 3.5rem); margin: 8px 0; font-weight: 800; }
+    body[data-font=script] h1 { font-weight: 400; font-size: clamp(2.6rem, 9vw, 4.6rem); }
+    #tagline { color: var(--text); opacity: .9; font-weight: 600; font-size: 1.1rem; margin: 0 0 32px; letter-spacing: .02em; }
+    #out { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    #out[hidden], #hero[hidden] { display: none; }
+    .unit {
+      background: var(--card); border-radius: 16px; padding: 18px 12px; min-width: 110px;
+      border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, .25);
+    }
+    .num { font-family: var(--num-font); font-size: clamp(2.2rem, 7vw, 3.4rem); font-weight: 800;
+           color: var(--accent); font-variant-numeric: tabular-nums; }
+    .lbl { color: var(--on-card); font-size: .75rem; text-transform: uppercase; letter-spacing: .14em; opacity: .8; }
+    #msg { margin-top: 28px; opacity: .85; min-height: 1.5em; }
+
+    #fx { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 0; }
+    #fx span { position: absolute; top: 0; will-change: transform, opacity; }
+    .snow     { animation: fall linear infinite; }
+    .confetti { animation: tumble linear infinite; }
+    .floating { animation: rise ease-in infinite; }
+    .sparkle  { animation: twinkle ease-in-out infinite; }
+    @keyframes fall    { from { transform: translate(0, -10vh); } to { transform: translate(var(--drift), 110vh); } }
+    @keyframes tumble  { from { transform: translate(0, -10vh) rotate(0); } to { transform: translate(var(--drift), 110vh) rotate(720deg); } }
+    @keyframes rise    { from { transform: translate(0, 110vh); opacity: 0; } 15% { opacity: 1; } to { transform: translate(var(--drift), -15vh); opacity: .2; } }
+    @keyframes twinkle { 0%, 100% { opacity: 0; transform: scale(.4); } 50% { opacity: 1; transform: scale(1.1); } }
+    @keyframes pop     { from { transform: scale(.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    @media (prefers-reduced-motion: reduce) { #fx { display: none; } #hero { animation: none; } }
+  </style>
+</head>
+<body>
+<div id="fx" aria-hidden="true"></div>
+<main>
+  <form id="form">
+    <input type="text" id="occasion" placeholder="What are you looking forward to?" aria-label="Occasion" required>
+    <input type="date" id="date" aria-label="Date" required>
+    <button type="submit" id="go">Start countdown</button>
+  </form>
+  <div id="hero" hidden></div>
+  <h1 id="title">Countdown</h1>
+  <p id="tagline"></p>
+  <div id="out" hidden>
+    <div class="unit"><div class="num" id="d">0</div><div class="lbl">Days</div></div>
+    <div class="unit"><div class="num" id="h">0</div><div class="lbl">Hours</div></div>
+    <div class="unit"><div class="num" id="m">0</div><div class="lbl">Minutes</div></div>
+    <div class="unit"><div class="num" id="s">0</div><div class="lbl">Seconds</div></div>
+  </div>
+  <p id="msg">Tell me the occasion and the date.</p>
+</main>
+<script>
+  const $ = (id) => document.getElementById(id);
+  const FONTS = {
+    serif:   ['"Playfair Display", Georgia, serif', '"Playfair Display", Georgia, serif'],
+    sans:    ['"Inter", system-ui, sans-serif', '"Inter", system-ui, sans-serif'],
+    script:  ['"Great Vibes", cursive', '"Playfair Display", Georgia, serif'],
+    display: ['"Bungee", system-ui, sans-serif', '"Bungee", system-ui, sans-serif'],
+    mono:    ['"Space Mono", monospace', '"Space Mono", monospace'],
+  };
+  let timer, end;
+
+  function applyTheme(t, year) {
+    const root = document.documentElement.style;
+    for (const [k, v] of Object.entries({ "bg-from": t.bg_from, "bg-to": t.bg_to, text: t.text, accent: t.accent, card: t.card })) {
+      root.setProperty("--" + k, v);
+    }
+    // Text on the boxes and inputs: whichever of light/dark reads better on the card color.
+    const lightCard = luminance(t.card) > 0.4;
+    root.setProperty("--on-card", lightCard ? "#111827" : "#F8FAFC");
+    root.colorScheme = lightCard ? "light" : "dark";
+    const [title, num] = FONTS[t.font] || FONTS.sans;
+    root.setProperty("--title-font", title);
+    root.setProperty("--num-font", num);
+    document.body.dataset.font = t.font;
+    $("hero").textContent = t.hero;
+    $("hero").hidden = false;
+    $("tagline").textContent = t.tagline.replaceAll("{year}", year);
+    particles(t.effect, t.particles);
+  }
+
+  function luminance(hex) {
+    const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  }
+
+  function particles(effect, glyphs) {
+    const fx = $("fx");
+    fx.replaceChildren();
+    if (effect === "none" || !glyphs.length) return;
+    const count = effect === "sparkle" ? 22 : 34;
+    for (let i = 0; i < count; i++) {
+      const p = document.createElement("span");
+      p.className = effect;
+      p.textContent = glyphs[i % glyphs.length];
+      p.style.left = Math.random() * 100 + "vw";
+      p.style.fontSize = (14 + Math.random() * 22) + "px";
+      p.style.setProperty("--drift", (Math.random() * 120 - 60) + "px");
+      p.style.animationDuration = (effect === "sparkle" ? 2 + Math.random() * 3 : 7 + Math.random() * 9) + "s";
+      p.style.animationDelay = -Math.random() * 16 + "s";
+      if (effect === "sparkle") p.style.top = Math.random() * 100 + "vh";
+      fx.append(p);
+    }
+  }
+
+  function tick() {
+    const left = Math.max(0, Math.round((end - Date.now()) / 1000));
+    $("d").textContent = Math.floor(left / 86400);
+    $("h").textContent = Math.floor(left % 86400 / 3600);
+    $("m").textContent = Math.floor(left % 3600 / 60);
+    $("s").textContent = left % 60;
+    if (left === 0) { clearInterval(timer); $("msg").textContent = "🎉 It's here! 🎉"; }
+  }
+
+  $("form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    clearInterval(timer);
+    const occasion = $("occasion").value.trim(), day = $("date").value;
+    // Midnight at the start of the chosen day, in the viewer's local time zone.
+    const target = new Date(day + "T00:00");
+    $("go").disabled = true;
+    $("msg").textContent = "Designing your countdown…";
+    try {
+      const qs = new URLSearchParams({ target: target.toISOString(), occasion });
+      const res = await fetch("/api/countdown?" + qs);
+      const data = await res.json();
+      if (!res.ok) { $("out").hidden = true; $("msg").textContent = data.detail; return; }
+      applyTheme(data.theme, target.getFullYear());
+      $("title").textContent = occasion;
+      document.title = occasion + " countdown";
+      end = Date.now() + data.seconds * 1000;
+      $("out").hidden = false;
+      $("msg").textContent = "until " + target.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+      tick();
+      timer = setInterval(tick, 1000);
+    } catch {
+      $("msg").textContent = "Something went wrong. Try again.";
+    } finally {
+      $("go").disabled = false;
+    }
+  });
+</script>
+</body>
+</html>

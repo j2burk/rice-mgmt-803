@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Market Week</title>
+<script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
+<style>
+  :root {
+    --bg: #F4F2EE; --panel: #FFFFFF; --ink: #17202B; --muted: #667085;
+    --accent: #1D4ED8; --accent-ink: #FFFFFF; --bot: #FFFFFF; --line: #E4E1DA;
+    --up: #067647; --down: #B42318;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #0F1319; --panel: #171C24; --ink: #E6EAF0; --muted: #98A2B3;
+            --accent: #6C9BFF; --accent-ink: #0A1020; --bot: #171C24; --line: #283040;
+            --up: #47CD89; --down: #F97066; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  .app { max-width: 860px; margin: 0 auto; height: 100dvh; display: flex; flex-direction: column; padding: 0 16px; }
+  header { padding: 20px 0 12px; }
+  h1 { margin: 0; font-size: 20px; }
+  header p { margin: 2px 0 0; color: var(--muted); font-size: 14px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums; }
+  th, td { padding: 7px 10px; text-align: right; white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  thead th { color: var(--muted); font-weight: 500; border-bottom: 1px solid var(--line); }
+  td.week { font-weight: 700; border-left: 1px solid var(--line); }
+  td .name { display: block; color: var(--muted); font-size: 12px; }
+  td .px { display: block; color: var(--muted); font-size: 12px; }
+  .up { color: var(--up); } .down { color: var(--down); }
+  #status { padding: 14px; color: var(--muted); font-size: 14px; }
+  #log { flex: 1; overflow-y: auto; padding: 16px 0; display: flex; flex-direction: column; gap: 12px; }
+  .msg { max-width: 90%; padding: 10px 14px; border-radius: 14px; word-wrap: break-word; }
+  .user { align-self: flex-end; background: var(--accent); color: var(--accent-ink); white-space: pre-wrap; }
+  .assistant { align-self: flex-start; background: var(--bot); border: 1px solid var(--line); }
+  .assistant > :first-child { margin-top: 0; } .assistant > :last-child { margin-bottom: 0; }
+  .assistant a { color: var(--accent); }
+  .error { align-self: center; color: var(--down); font-size: 14px; }
+  .typing { color: var(--muted); font-style: italic; }
+  .quick { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip { font: inherit; font-size: 14px; background: var(--panel); color: var(--ink);
+          border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; cursor: pointer; }
+  .chip:hover { border-color: var(--accent); }
+  form { display: flex; gap: 8px; padding: 12px 0 20px; border-top: 1px solid var(--line); }
+  textarea { flex: 1; resize: none; font: inherit; color: var(--ink); background: var(--panel);
+             border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; min-height: 46px; max-height: 160px; }
+  textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  button[type=submit] { font: inherit; font-weight: 600; background: var(--accent); color: var(--accent-ink);
+           border: 0; border-radius: 12px; padding: 0 18px; cursor: pointer; }
+  button:disabled { opacity: .5; cursor: default; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Market Week</h1>
+    <p id="sub">SPY · IEF · UUP · GLD · USO, last 6 trading days · Claude Sonnet 5 · Not investment advice</p>
+  </header>
+  <div class="card"><div id="status">Loading prices from yfinance…</div><table id="table" hidden></table></div>
+  <div id="log">
+    <div class="quick">
+      <button class="chip" data-q="Analyze this week's data.">Analyze this week's data</button>
+      <button class="chip" data-q="Was this a risk-on or risk-off week? Walk through the cross-asset signals.">Risk-on or risk-off?</button>
+      <button class="chip" data-q="Which asset moved the most, and which was most volatile?">Biggest mover</button>
+    </div>
+  </div>
+  <form id="form">
+    <textarea id="prompt" placeholder="Ask about the week… (Enter to send, Shift+Enter for a new line)" rows="1" autofocus></textarea>
+    <button id="send" type="submit">Send</button>
+  </form>
+</div>
+<script>
+  const log = document.getElementById("log");
+  const form = document.getElementById("form");
+  const input = document.getElementById("prompt");
+  const send = document.getElementById("send");
+  const history = [];
+
+  const pct = (r) => r == null ? "" :
+    `<span class="${r >= 0 ? "up" : "down"}">${r >= 0 ? "+" : ""}${r.toFixed(2)}%</span>`;
+
+  async function loadMarket() {
+    const status = document.getElementById("status");
+    try {
+      const res = await fetch("/api/market");
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.detail || "Couldn't load prices.");
+      const table = document.getElementById("table");
+      table.innerHTML =
+        `<thead><tr><th>Asset</th>${d.dates.map(x => `<th>${x}</th>`).join("")}<th>Period</th></tr></thead><tbody>` +
+        d.assets.map(a => `<tr><td><strong>${a.ticker}</strong><span class="name">${a.name}</span></td>` +
+          a.prices.map((p, i) => `<td>${i ? pct(a.daily[i]) : ""}<span class="px">${p.toFixed(2)}</span></td>`).join("") +
+          `<td class="week">${pct(a.period)}</td></tr>`).join("") + "</tbody>";
+      status.hidden = true; table.hidden = false;
+    } catch (err) { status.textContent = err.message; }
+  }
+
+  function add(role, text) {
+    const div = document.createElement("div");
+    div.className = "msg " + role;
+    if (role === "assistant") div.innerHTML = DOMPurify.sanitize(marked.parse(text));
+    else div.textContent = text;
+    log.appendChild(div);
+    log.scrollTop = log.scrollHeight;
+    return div;
+  }
+
+  async function ask(text) {
+    add("user", text);
+    history.push({ role: "user", content: text });
+    send.disabled = true;
+    const typing = add("typing", "Analyzing the data…");
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: history }),
+      });
+      const data = await res.json();
+      typing.remove();
+      if (!res.ok) throw new Error(data.detail || "Something went wrong.");
+      add("assistant", data.reply);
+      history.push({ role: "assistant", content: data.reply });
+    } catch (err) {
+      typing.remove();
+      history.pop();
+      add("error", err.message);
+    } finally {
+      send.disabled = false;
+      input.focus();
+    }
+  }
+
+  document.querySelectorAll(".chip").forEach(b =>
+    b.addEventListener("click", () => { if (!send.disabled) ask(b.dataset.q); }));
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); }
+  });
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const text = input.value.trim();
+    if (!text || send.disabled) return;
+    input.value = "";
+    ask(text);
+  });
+  loadMarket();
+</script>
+</body>
+</html>

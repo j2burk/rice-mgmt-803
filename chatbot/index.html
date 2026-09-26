@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chad, Finance Bro</title>
+<style>
+  :root {
+    --bg: #F4F1EA; --panel: #FFFFFF; --ink: #1B2430; --muted: #6B7280;
+    --accent: #0B6E4F; --accent-ink: #FFFFFF; --bot: #EEF3EF; --line: #E2DED3;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #0E1512; --panel: #16201B; --ink: #E7EDE9; --muted: #93A29A;
+            --accent: #2FBF83; --accent-ink: #062016; --bot: #1D2A24; --line: #27352E; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  .app { max-width: 760px; margin: 0 auto; height: 100dvh; display: flex; flex-direction: column; padding: 0 16px; }
+  header { padding: 20px 0 12px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 12px; }
+  .avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--accent); color: var(--accent-ink);
+            display: grid; place-items: center; font-size: 22px; }
+  h1 { margin: 0; font-size: 18px; }
+  header p { margin: 0; color: var(--muted); font-size: 14px; }
+  #log { flex: 1; overflow-y: auto; padding: 20px 0; display: flex; flex-direction: column; gap: 12px; }
+  .msg { max-width: 85%; padding: 10px 14px; border-radius: 16px; white-space: pre-wrap; word-wrap: break-word; }
+  .user { align-self: flex-end; background: var(--accent); color: var(--accent-ink); border-bottom-right-radius: 4px; }
+  .assistant { align-self: flex-start; background: var(--bot); border-bottom-left-radius: 4px; }
+  .error { align-self: center; color: #B42318; font-size: 14px; }
+  .typing { color: var(--muted); font-style: italic; }
+  form { display: flex; gap: 8px; padding: 12px 0 20px; border-top: 1px solid var(--line); }
+  textarea { flex: 1; resize: none; font: inherit; color: var(--ink); background: var(--panel);
+             border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; min-height: 46px; max-height: 160px; }
+  textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  button { font: inherit; font-weight: 600; background: var(--accent); color: var(--accent-ink);
+           border: 0; border-radius: 12px; padding: 0 18px; cursor: pointer; }
+  button:disabled { opacity: .5; cursor: default; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="avatar">📈</div>
+    <div>
+      <h1>Chad, Finance Bro</h1>
+      <p>Powered by Claude Sonnet 5 · Not financial advice, bro</p>
+    </div>
+  </header>
+  <div id="log">
+    <div class="msg assistant">Yo! Chad here. Just crushed a 5am cold plunge, so I'm fully risk-on. What are we working on?</div>
+  </div>
+  <form id="form">
+    <textarea id="prompt" placeholder="Ask Chad anything… (Enter to send, Shift+Enter for a new line)" rows="1" autofocus></textarea>
+    <button id="send" type="submit">Send</button>
+  </form>
+</div>
+<script>
+  const log = document.getElementById("log");
+  const form = document.getElementById("form");
+  const input = document.getElementById("prompt");
+  const send = document.getElementById("send");
+  const history = [];  // the full conversation, sent to the backend on every turn
+
+  function add(role, text) {
+    const div = document.createElement("div");
+    div.className = "msg " + role;
+    div.textContent = text;
+    log.appendChild(div);
+    log.scrollTop = log.scrollHeight;
+    return div;
+  }
+
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); }
+  });
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = "";
+    add("user", text);
+    history.push({ role: "user", content: text });
+    send.disabled = true;
+    const typing = add("assistant typing", "Chad is typing…");
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: history }),
+      });
+      const data = await res.json();
+      typing.remove();
+      if (!res.ok) throw new Error(data.detail || "Something went wrong.");
+      add("assistant", data.reply);
+      history.push({ role: "assistant", content: data.reply });
+    } catch (err) {
+      typing.remove();
+      history.pop();  // drop the unanswered message so the conversation stays valid
+      add("error", err.message);
+    } finally {
+      send.disabled = false;
+      input.focus();
+    }
+  });
+</script>
+</body>
+</html>

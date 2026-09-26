@@ -1,0 +1,29 @@
+# Secrets
+.env
+.env.*
+*.env
+**/.env
+**/.env.*
+*key*.rtf
+*Key*.rtf
+*secret*
+*credential*
+*.pem
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Tooling / cache
+.playwright-mcp/
+.DS_Store
+
+# fred-agent-opencode (separate env, has its own .venv)
+fred-agent-opencode/.venv/
