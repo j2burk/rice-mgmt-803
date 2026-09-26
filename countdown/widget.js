@@ -41,12 +41,8 @@ async function fetchTheme(occasion, date) {
 }
 
 function formatRemaining(ms) {
-  if (ms <= 0) return { days: 0, hours: 0, minutes: 0, done: true };
-  const totalMinutes = Math.floor(ms / 60000);
-  const days = Math.floor(totalMinutes / 1440);
-  const hours = Math.floor((totalMinutes % 1440) / 60);
-  const minutes = totalMinutes % 60;
-  return { days, hours, minutes, done: false };
+  if (ms <= 0) return { days: 0, done: true };
+  return { days: Math.ceil(ms / 86400000), done: false };
 }
 
 const DEFAULT_THEME = {
@@ -91,8 +87,8 @@ async function createWidget() {
   widget.addSpacer(6);
 
   const remainingMs = date.getTime() - Date.now();
-  const { days, hours, minutes, done } = formatRemaining(remainingMs);
-  const countText = done ? "🎉 It's here! 🎉" : `${days}d ${hours}h ${minutes}m`;
+  const { days, done } = formatRemaining(remainingMs);
+  const countText = done ? "🎉 It's here! 🎉" : `${days} day${days === 1 ? "" : "s"}`;
   const count = widget.addText(countText);
   count.textColor = new Color(theme.accent || DEFAULT_THEME.accent);
   count.font = Font.boldSystemFont(done ? 16 : 22);
