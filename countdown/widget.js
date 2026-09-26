@@ -7,8 +7,8 @@
 //   3. Long-press your home screen -> tap "+" -> find Scriptable -> pick a
 //      size (Medium recommended) -> add it.
 //   4. Long-press the new widget -> "Edit Widget" -> set Script to
-//      "Countdown" -> set Parameter to "Occasion,YYYY-MM-DD",
-//      e.g.  Christmas,2026-12-25
+//      "Countdown" -> set Parameter to "Occasion,MM/DD/YYYY",
+//      e.g.  Christmas,12/25/2026
 //
 // The widget calls the live countdown app (rice-mgmt-803.onrender.com) to
 // get a Claude-designed theme for the occasion, same as the web app. iOS
@@ -24,7 +24,10 @@ function parseParam(raw) {
   const occasion = raw.slice(0, commaIndex).trim();
   const dateStr = raw.slice(commaIndex + 1).trim();
   if (!occasion || !dateStr) return null;
-  const date = new Date(dateStr + "T00:00:00");
+  const match = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!match) return null;
+  const [, month, day, year] = match;
+  const date = new Date(Number(year), Number(month) - 1, Number(day));
   if (isNaN(date.getTime())) return null;
   return { occasion, date };
 }
@@ -60,7 +63,7 @@ async function createWidget() {
   const parsed = parseParam(args.widgetParameter);
   if (!parsed) {
     widget.backgroundColor = new Color(DEFAULT_THEME.bg_from);
-    const text = widget.addText("Long-press → Edit Widget → set Parameter to:\nOccasion,YYYY-MM-DD\ne.g. Christmas,2026-12-25");
+    const text = widget.addText("Long-press → Edit Widget → set Parameter to:\nOccasion,MM/DD/YYYY\ne.g. Christmas,12/25/2026");
     text.textColor = Color.white();
     text.font = Font.mediumSystemFont(13);
     return widget;
