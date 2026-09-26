@@ -27,3 +27,6 @@ npm-debug.log*
 
 # fred-agent-opencode (separate env, has its own .venv)
 fred-agent-opencode/.venv/
+
+# college-shortlist lives in its own private repo
+college-shortlist/
