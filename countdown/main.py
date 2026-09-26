@@ -9,12 +9,12 @@ from themes import theme_for
 
 app = FastAPI(title="Countdown")
 
-PAGE = (Path(__file__).parent / "index.html").read_text()
+PAGE = Path(__file__).parent / "index.html"
 
 
 @app.get("/", response_class=HTMLResponse)
 def index():
-    return PAGE
+    return PAGE.read_text()  # read per request so edits show up without a restart
 
 
 @app.get("/api/countdown")

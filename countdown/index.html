@@ -8,7 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Playfair+Display:wght@600;800&family=Great+Vibes&family=Bungee&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-from: #0F172A; --bg-to: #1E293B; --text: #E2E8F0; --accent: #38BDF8; --card: #1E293B;
+      --bg-from: #6D28D9; --bg-to: #DB2777; --text: #FFFFFF; --accent: #FDE047; --card: #4C1D95;
       --on-card: #E2E8F0; color-scheme: dark;
       --title-font: "Inter", system-ui, sans-serif; --num-font: "Inter", system-ui, sans-serif;
     }
@@ -16,7 +16,8 @@
     body {
       margin: 0; min-height: 100vh; overflow-x: hidden;
       font-family: "Inter", system-ui, sans-serif; color: var(--text);
-      background: linear-gradient(160deg, var(--bg-from), var(--bg-to)) fixed;
+      background: linear-gradient(135deg, var(--bg-from) 30%, var(--bg-to) 70%) fixed;
+      background: linear-gradient(in oklch 135deg, var(--bg-from) 30%, var(--bg-to) 70%) fixed;
       transition: background .6s, color .6s;
       display: grid; place-items: center;
     }

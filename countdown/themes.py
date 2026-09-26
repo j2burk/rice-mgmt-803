@@ -1,5 +1,6 @@
 """Have Claude design a visual theme for any occasion, with a plain default if it can't."""
 
+import colorsys
 import os
 import re
 from pathlib import Path
@@ -26,8 +27,8 @@ class Theme(BaseModel):
 
 DEFAULT = Theme(
     hero="⏳", tagline="Counting every second",
-    bg_from="#0F172A", bg_to="#1E293B",
-    text="#E2E8F0", accent="#38BDF8", card="#1E293B",
+    bg_from="#6D28D9", bg_to="#DB2777",
+    text="#FFFFFF", accent="#FDE047", card="#4C1D95",
     font="sans", effect="sparkle", particles=["✨"],
 )
 
@@ -50,10 +51,36 @@ _load_key()
 _client = anthropic.Anthropic() if os.environ.get("ANTHROPIC_API_KEY") else None
 
 
+def _vivid(hex_color: str) -> str:
+    """Lift a muted, grayish or near-black color to a saturated, mid-bright version of the same hue."""
+    r, g, b = (int(hex_color[i:i + 2], 16) / 255 for i in (1, 3, 5))
+    h, l, s = colorsys.rgb_to_hls(r, g, b)
+    r, g, b = colorsys.hls_to_rgb(h, min(max(l, 0.3), 0.62), max(s, 0.75))
+    return "#{:02X}{:02X}{:02X}".format(round(r * 255), round(g * 255), round(b * 255))
+
+
+def _luminance(hex_color: str) -> float:
+    def channel(c: float) -> float:
+        return c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
+    r, g, b = (channel(int(hex_color[i:i + 2], 16) / 255) for i in (1, 3, 5))
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+
+def _contrast(a: str, b: str) -> float:
+    hi, lo = sorted((_luminance(a), _luminance(b)), reverse=True)
+    return (hi + 0.05) / (lo + 0.05)
+
+
 def _clean(theme: Theme) -> Theme:
     for field in ("bg_from", "bg_to", "text", "accent", "card"):
         if not HEX.match(getattr(theme, field)):
             setattr(theme, field, getattr(DEFAULT, field))
+    theme.bg_from, theme.bg_to = _vivid(theme.bg_from), _vivid(theme.bg_to)
+    # Brightening the background can undo Claude's contrast; fall back to white or near-black text.
+    if min(_contrast(theme.text, theme.bg_from), _contrast(theme.text, theme.bg_to)) < 4:
+        dark = "#111827"
+        worst = lambda c: min(_contrast(c, theme.bg_from), _contrast(c, theme.bg_to))
+        theme.text = "#FFFFFF" if worst("#FFFFFF") >= worst(dark) else dark
     theme.particles = theme.particles[:4] or DEFAULT.particles
     return theme
 
@@ -70,6 +97,9 @@ def _ask_claude(occasion: str) -> Theme | None:
                 "You design the look of a countdown page for an occasion someone is looking forward to. "
                 "Make it feel specific to the occasion: use the real colors of any named school, team, "
                 "brand, holiday or culture, and choose emoji, font and effect that fit its mood. "
+                "The background must be vivid and saturated: bold, bright, energetic hues, with the two "
+                "gradient colors clearly different from each other. Never use muted, dusty, pastel-gray, "
+                "or near-black backgrounds; for a school or brand, use the brightest version of its colors. "
                 "Keep text highly readable against the background, and make the accent readable on both the "
                 "background and the card color."
             ),
