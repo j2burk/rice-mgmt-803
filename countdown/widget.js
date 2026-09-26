@@ -57,15 +57,19 @@ const DEFAULT_THEME = {
 };
 
 async function createWidget() {
+  const family = config.widgetFamily || "medium"; // no family when previewing in-app
+  const isSmall = family === "small";
+  const pad = isSmall ? 10 : 14;
+
   const widget = new ListWidget();
-  widget.setPadding(14, 14, 14, 14);
+  widget.setPadding(pad, pad, pad, pad);
 
   const parsed = parseParam(args.widgetParameter);
   if (!parsed) {
     widget.backgroundColor = new Color(DEFAULT_THEME.bg_from);
     const text = widget.addText("Long-press → Edit Widget → set Parameter to:\nOccasion,MM/DD/YYYY\ne.g. Christmas,12/25/2026");
     text.textColor = Color.white();
-    text.font = Font.mediumSystemFont(13);
+    text.font = Font.mediumSystemFont(isSmall ? 11 : 13);
     return widget;
   }
 
@@ -79,23 +83,27 @@ async function createWidget() {
   widget.backgroundGradient = gradient;
 
   const hero = widget.addText(theme.hero || DEFAULT_THEME.hero);
-  hero.font = Font.systemFont(30);
+  hero.font = Font.systemFont(isSmall ? 22 : 30);
   hero.centerAlignText();
-  widget.addSpacer(4);
+  widget.addSpacer(isSmall ? 2 : 4);
 
   const title = widget.addText(occasion);
   title.textColor = new Color(theme.text || DEFAULT_THEME.text);
-  title.font = Font.boldSystemFont(18);
+  title.font = Font.boldSystemFont(isSmall ? 14 : 18);
   title.centerAlignText();
-  widget.addSpacer(6);
+  title.lineLimit = isSmall ? 1 : 2;
+  title.minimumScaleFactor = 0.6;
+  widget.addSpacer(isSmall ? 2 : 6);
 
   const remainingMs = date.getTime() - Date.now();
   const { days, done } = formatRemaining(remainingMs);
   const countText = done ? "🎉 It's here! 🎉" : `${days} day${days === 1 ? "" : "s"}`;
   const count = widget.addText(countText);
   count.textColor = new Color(theme.accent || DEFAULT_THEME.accent);
-  count.font = Font.boldSystemFont(done ? 16 : 22);
+  count.font = Font.boldSystemFont(done ? (isSmall ? 13 : 16) : (isSmall ? 18 : 22));
   count.centerAlignText();
+  count.lineLimit = 1;
+  count.minimumScaleFactor = 0.6;
 
   widget.refreshAfterDate = new Date(Date.now() + 15 * 60 * 1000);
   return widget;
