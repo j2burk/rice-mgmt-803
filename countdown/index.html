@@ -80,6 +80,9 @@
   <p id="tagline"></p>
   <div id="out" hidden>
     <div class="unit"><div class="num" id="d">0</div><div class="lbl">Days</div></div>
+    <div class="unit"><div class="num" id="h">0</div><div class="lbl">Hours</div></div>
+    <div class="unit"><div class="num" id="m">0</div><div class="lbl">Minutes</div></div>
+    <div class="unit"><div class="num" id="s">0</div><div class="lbl">Seconds</div></div>
   </div>
   <p id="msg"></p>
 </main>
@@ -138,9 +141,12 @@
   }
 
   function tick() {
-    const left = Math.max(0, end - Date.now());
-    $("d").textContent = Math.ceil(left / 86400000);
-    if (left <= 0) { clearInterval(timer); $("msg").textContent = "🎉 It's here! 🎉"; }
+    const left = Math.max(0, Math.round((end - Date.now()) / 1000));
+    $("d").textContent = Math.floor(left / 86400);
+    $("h").textContent = Math.floor(left % 86400 / 3600);
+    $("m").textContent = Math.floor(left % 3600 / 60);
+    $("s").textContent = left % 60;
+    if (left === 0) { clearInterval(timer); $("msg").textContent = "🎉 It's here! 🎉"; }
   }
 
   $("form").addEventListener("submit", async (e) => {
@@ -163,7 +169,7 @@
       $("out").hidden = false;
       $("msg").textContent = "until " + target.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
       tick();
-      timer = setInterval(tick, 60000);
+      timer = setInterval(tick, 1000);
     } catch {
       $("msg").textContent = "Something went wrong. Try again.";
     } finally {
