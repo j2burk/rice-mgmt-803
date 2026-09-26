@@ -8,7 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Playfair+Display:wght@600;800&family=Great+Vibes&family=Bungee&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-from: #0F172A; --bg-to: #1E293B; --text: #E2E8F0; --accent: #38BDF8; --card: #1E293B;
+      --bg-from: #6D28D9; --bg-to: #DB2777; --text: #FFFFFF; --accent: #FDE047; --card: #4C1D95;
       --on-card: #E2E8F0; color-scheme: dark;
       --title-font: "Inter", system-ui, sans-serif; --num-font: "Inter", system-ui, sans-serif;
     }
@@ -16,11 +16,9 @@
     body {
       margin: 0; min-height: 100vh; overflow-x: hidden; position: relative;
       font-family: "Inter", system-ui, sans-serif; color: var(--text);
-      background: linear-gradient(-45deg,
-        var(--bg-from),
-        color-mix(in srgb, var(--bg-from) 60%, var(--accent) 40%),
-        var(--bg-to),
-        color-mix(in srgb, var(--bg-to) 60%, var(--accent) 40%));
+      background: linear-gradient(-45deg, var(--bg-from), var(--bg-to), var(--bg-from), var(--bg-to));
+      /* Blend through the color wheel so the fade stays saturated instead of going gray. */
+      background: linear-gradient(in oklch -45deg, var(--bg-from), var(--bg-to), var(--bg-from), var(--bg-to));
       background-size: 400% 400%;
       animation: gradientShift 18s ease infinite;
       transition: color .6s;
@@ -28,8 +26,9 @@
     }
     body::before {
       content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
-      background: radial-gradient(circle at 30% 25%, color-mix(in srgb, var(--accent) 45%, transparent), transparent 55%),
-                  radial-gradient(circle at 75% 75%, color-mix(in srgb, var(--accent) 30%, transparent), transparent 50%);
+      /* Glows use the theme's own colors; mixing in the accent turned them muddy. */
+      background: radial-gradient(circle at 30% 25%, color-mix(in srgb, var(--bg-to) 70%, transparent), transparent 55%),
+                  radial-gradient(circle at 75% 75%, color-mix(in srgb, var(--bg-from) 70%, transparent), transparent 50%);
       animation: drift 16s ease-in-out infinite alternate;
       transition: background 1s;
     }
@@ -110,44 +109,73 @@
 
   const DEFAULT = {
     hero: "⏳", tagline: "Counting every second",
-    bg_from: "#0F172A", bg_to: "#1E293B", text: "#E2E8F0", accent: "#38BDF8", card: "#1E293B",
+    bg_from: "#6D28D9", bg_to: "#DB2777", text: "#FFFFFF", accent: "#FDE047", card: "#4C1D95",
     font: "sans", effect: "sparkle", particles: ["✨"],
   };
 
   // A handful of hand-picked themes for common occasions. Anything else falls back to DEFAULT.
   const THEMES = [
     { match: /birthday/, theme: { hero: "🎂", tagline: "Another trip around the sun in {year}",
-      bg_from: "#3B0764", bg_to: "#701A75", text: "#FDF4FF", accent: "#F0ABFC", card: "#581C87",
+      bg_from: "#A21CAF", bg_to: "#E11D48", text: "#FFFFFF", accent: "#FDE047", card: "#86198F",
       font: "display", effect: "confetti", particles: ["🎈", "🎉", "🎁"] } },
     { match: /wedding|marry|marriage/, theme: { hero: "💍", tagline: "Until we say I do",
-      bg_from: "#FDF2F8", bg_to: "#FCE7F3", text: "#831843", accent: "#DB2777", card: "#FFFFFF",
+      bg_from: "#DB2777", bg_to: "#9333EA", text: "#FFFFFF", accent: "#DB2777", card: "#FFFFFF",
       font: "script", effect: "floating", particles: ["🤍", "🌸"] } },
     { match: /graduat/, theme: { hero: "🎓", tagline: "The big day is almost here",
-      bg_from: "#0C2340", bg_to: "#1E3A5F", text: "#E0F2FE", accent: "#FACC15", card: "#132C4C",
+      bg_from: "#1D4ED8", bg_to: "#0369A1", text: "#FFFFFF", accent: "#FACC15", card: "#1E3A8A",
       font: "serif", effect: "confetti", particles: ["🎓", "⭐"] } },
     { match: /christmas|xmas/, theme: { hero: "🎄", tagline: "{year} is almost here",
-      bg_from: "#052E16", bg_to: "#14532D", text: "#F0FDF4", accent: "#EF4444", card: "#166534",
-      font: "display", effect: "snow", particles: ["❄️"] } },
+      bg_from: "#DC2626", bg_to: "#B91C1C", text: "#FFFFFF", accent: "#FDE047", card: "#14532D",
+      font: "display", effect: "snow", particles: ["❄️", "🎁"] } },
     { match: /halloween/, theme: { hero: "🎃", tagline: "Something wicked this way comes",
-      bg_from: "#0A0A0A", bg_to: "#1C1917", text: "#FED7AA", accent: "#F97316", card: "#292524",
+      bg_from: "#C2410C", bg_to: "#7C3AED", text: "#FFFFFF", accent: "#FACC15", card: "#3B0764",
       font: "display", effect: "floating", particles: ["🦇", "🕸️"] } },
     { match: /thanksgiving/, theme: { hero: "🦃", tagline: "Time to gather round",
-      bg_from: "#431407", bg_to: "#7C2D12", text: "#FFF7ED", accent: "#F59E0B", card: "#7C2D12",
+      bg_from: "#C2410C", bg_to: "#B45309", text: "#FFFFFF", accent: "#FEF3C7", card: "#7C2D12",
       font: "serif", effect: "floating", particles: ["🍂", "🍁"] } },
     { match: /new year/, theme: { hero: "🎆", tagline: "Bring on {year}",
-      bg_from: "#0B0F19", bg_to: "#111827", text: "#F9FAFB", accent: "#FBBF24", card: "#1F2937",
+      bg_from: "#4338CA", bg_to: "#C026D3", text: "#FFFFFF", accent: "#FBBF24", card: "#1E1B4B",
       font: "display", effect: "sparkle", particles: ["✨", "🎉"] } },
     { match: /vacation|trip|travel|beach/, theme: { hero: "🏖️", tagline: "Sand, sun, and no schedule",
-      bg_from: "#0C4A6E", bg_to: "#0369A1", text: "#F0F9FF", accent: "#FDE047", card: "#075985",
+      bg_from: "#0369A1", bg_to: "#0E7490", text: "#FFFFFF", accent: "#FDE047", card: "#075985",
       font: "sans", effect: "floating", particles: ["🌴", "☀️"] } },
     { match: /retire/, theme: { hero: "🥂", tagline: "The next chapter starts in {year}",
-      bg_from: "#1E1B4B", bg_to: "#312E81", text: "#EEF2FF", accent: "#A5B4FC", card: "#3730A3",
+      bg_from: "#7C3AED", bg_to: "#2563EB", text: "#FFFFFF", accent: "#FDE68A", card: "#3730A3",
       font: "serif", effect: "sparkle", particles: ["✨", "🥂"] } },
   ];
 
+  // Lift any muted, grayish or near-black color to a saturated, mid-bright version of the same hue.
+  function vivid(hex) {
+    const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+    const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+    let h = 0;
+    if (d) h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+    let l = (max + min) / 2, s = d ? d / (1 - Math.abs(2 * l - 1)) : 0;
+    l = Math.min(Math.max(l, 0.3), 0.62); s = Math.max(s, 0.75);
+    const c = (1 - Math.abs(2 * l - 1)) * s, x = c * (1 - Math.abs((h % 2 + 2) % 2 - 1)), m = l - c / 2;
+    const hi = Math.floor((h + 6) % 6);
+    const rgb = [[c, x, 0], [x, c, 0], [0, c, x], [0, x, c], [x, 0, c], [c, 0, x]][hi];
+    return "#" + rgb.map((v) => Math.round((v + m) * 255).toString(16).padStart(2, "0")).join("").toUpperCase();
+  }
+
+  function contrast(a, b) {
+    const lum = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
+      .map((c) => c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)
+      .reduce((sum, c, i) => sum + c * [0.2126, 0.7152, 0.0722][i], 0);
+    const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x);
+    return (hi + 0.05) / (lo + 0.05);
+  }
+
+  function vividTheme(t) {
+    const out = { ...t, bg_from: vivid(t.bg_from), bg_to: vivid(t.bg_to) };
+    const worst = (c) => Math.min(contrast(c, out.bg_from), contrast(c, out.bg_to));
+    if (worst(out.text) < 4) out.text = worst("#FFFFFF") >= worst("#111827") ? "#FFFFFF" : "#111827";
+    return out;
+  }
+
   function themeFor(occasion) {
     const found = THEMES.find((t) => t.match.test(occasion.toLowerCase()));
-    return found ? found.theme : DEFAULT;
+    return vividTheme(found ? found.theme : DEFAULT);
   }
 
   let timer, end;
