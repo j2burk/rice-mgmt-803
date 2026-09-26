@@ -66,10 +66,10 @@
     .confetti { animation: tumble linear infinite; }
     .floating { animation: rise ease-in infinite; }
     .sparkle  { animation: twinkle ease-in-out infinite; }
-    @keyframes fall    { from { transform: translate(0, -10vh); } to { transform: translate(var(--drift), 110vh); } }
-    @keyframes tumble  { from { transform: translate(0, -10vh) rotate(0); } to { transform: translate(var(--drift), 110vh) rotate(720deg); } }
-    @keyframes rise    { from { transform: translate(0, 110vh); opacity: 0; } 15% { opacity: 1; } to { transform: translate(var(--drift), -15vh); opacity: .2; } }
-    @keyframes twinkle { 0%, 100% { opacity: 0; transform: scale(.4); } 50% { opacity: 1; transform: scale(1.1); } }
+    @keyframes fall    { from { transform: translate(0, -10vh) rotate(0deg); } to { transform: translate(var(--drift), 110vh) rotate(var(--spin)); } }
+    @keyframes tumble  { from { transform: translate(0, -10vh) rotate(0deg); } to { transform: translate(var(--drift), 110vh) rotate(var(--spin)); } }
+    @keyframes rise    { from { transform: translate(0, 110vh) rotate(0deg); opacity: 0; } 15% { opacity: 1; } to { transform: translate(var(--drift), -15vh) rotate(var(--spin)); opacity: .2; } }
+    @keyframes twinkle { 0%, 100% { opacity: 0; transform: scale(.4) rotate(0deg); } 50% { opacity: 1; transform: scale(1.5) rotate(var(--spin)); } }
     @keyframes pop     { from { transform: scale(.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     @keyframes gradientShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
     @keyframes drift { from { transform: translate(-4%, -3%) scale(1); } to { transform: translate(4%, 3%) scale(1.15); } }
@@ -180,15 +180,19 @@
     const fx = $("fx");
     fx.replaceChildren();
     if (effect === "none" || !glyphs.length) return;
-    const count = effect === "sparkle" ? 22 : 34;
+    const count = effect === "sparkle" ? 26 : 40;
+    const spinRange = effect === "confetti" ? [720, 1440] : effect === "sparkle" ? [-25, 25] : [-100, 100];
     for (let i = 0; i < count; i++) {
       const p = document.createElement("span");
       p.className = effect;
       p.textContent = glyphs[i % glyphs.length];
       p.style.left = Math.random() * 100 + "vw";
-      p.style.fontSize = (14 + Math.random() * 22) + "px";
-      p.style.setProperty("--drift", (Math.random() * 120 - 60) + "px");
-      p.style.animationDuration = (effect === "sparkle" ? 2 + Math.random() * 3 : 7 + Math.random() * 9) + "s";
+      p.style.fontSize = (22 + Math.random() * 46) + "px";
+      p.style.setProperty("--drift", (Math.random() * 220 - 110) + "px");
+      const [lo, hi] = spinRange;
+      const spin = lo + Math.random() * (hi - lo);
+      p.style.setProperty("--spin", (Math.random() < 0.5 ? -spin : spin) + "deg");
+      p.style.animationDuration = (effect === "sparkle" ? 2 + Math.random() * 3 : 6 + Math.random() * 8) + "s";
       p.style.animationDelay = -Math.random() * 16 + "s";
       if (effect === "sparkle") p.style.top = Math.random() * 100 + "vh";
       fx.append(p);
