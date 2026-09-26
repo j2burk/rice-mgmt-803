@@ -14,11 +14,24 @@
     }
     * { box-sizing: border-box; }
     body {
-      margin: 0; min-height: 100vh; overflow-x: hidden;
+      margin: 0; min-height: 100vh; overflow-x: hidden; position: relative;
       font-family: "Inter", system-ui, sans-serif; color: var(--text);
-      background: linear-gradient(160deg, var(--bg-from), var(--bg-to)) fixed;
-      transition: background .6s, color .6s;
+      background: linear-gradient(-45deg,
+        var(--bg-from),
+        color-mix(in srgb, var(--bg-from) 60%, var(--accent) 40%),
+        var(--bg-to),
+        color-mix(in srgb, var(--bg-to) 60%, var(--accent) 40%));
+      background-size: 400% 400%;
+      animation: gradientShift 18s ease infinite;
+      transition: color .6s;
       display: grid; place-items: center;
+    }
+    body::before {
+      content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background: radial-gradient(circle at 30% 25%, color-mix(in srgb, var(--accent) 45%, transparent), transparent 55%),
+                  radial-gradient(circle at 75% 75%, color-mix(in srgb, var(--accent) 30%, transparent), transparent 50%);
+      animation: drift 16s ease-in-out infinite alternate;
+      transition: background 1s;
     }
     main { position: relative; z-index: 1; text-align: center; padding: 32px 16px; width: 100%; max-width: 760px; }
     form { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 40px; }
@@ -58,7 +71,12 @@
     @keyframes rise    { from { transform: translate(0, 110vh); opacity: 0; } 15% { opacity: 1; } to { transform: translate(var(--drift), -15vh); opacity: .2; } }
     @keyframes twinkle { 0%, 100% { opacity: 0; transform: scale(.4); } 50% { opacity: 1; transform: scale(1.1); } }
     @keyframes pop     { from { transform: scale(.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-    @media (prefers-reduced-motion: reduce) { #fx { display: none; } #hero { animation: none; } }
+    @keyframes gradientShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+    @keyframes drift { from { transform: translate(-4%, -3%) scale(1); } to { transform: translate(4%, 3%) scale(1.15); } }
+    @media (prefers-reduced-motion: reduce) {
+      #fx { display: none; } #hero { animation: none; }
+      body, body::before { animation: none; }
+    }
   </style>
 </head>
 <body>
