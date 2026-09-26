@@ -6,7 +6,7 @@
       "runtimeExecutable": "/bin/bash",
       "runtimeArgs": [
         "-c",
-        "cd \"/Users/jessicaburk/Library/Mobile Documents/com~apple~CloudDocs/Claude Code/Rice MGMT 803/countdown\" && exec .venv/bin/python -m uvicorn main:app --port 8000 --reload --reload-exclude \".venv/*\""
+        "cd countdown && exec .venv/bin/python -m uvicorn main:app --port 8000 --reload --reload-exclude \".venv/*\""
       ],
       "port": 8000
     },
@@ -15,7 +15,7 @@
       "runtimeExecutable": "/bin/bash",
       "runtimeArgs": [
         "-c",
-        "cd \"/Users/jessicaburk/Library/Mobile Documents/com~apple~CloudDocs/Claude Code/Rice MGMT 803/chatbot\" && exec .venv/bin/python -m uvicorn main:app --port 8001 --reload --reload-exclude \".venv/*\""
+        "cd chatbot && exec .venv/bin/python -m uvicorn main:app --port 8001 --reload --reload-exclude \".venv/*\""
       ],
       "port": 8001
     },
@@ -24,7 +24,7 @@
       "runtimeExecutable": "/bin/bash",
       "runtimeArgs": [
         "-c",
-        "cd \"/Users/jessicaburk/Library/Mobile Documents/com~apple~CloudDocs/Claude Code/Rice MGMT 803/market-week\" && exec .venv/bin/python -m uvicorn main:app --port 8002 --reload --reload-exclude \".venv/*\""
+        "cd market-week && exec .venv/bin/python -m uvicorn main:app --port 8002 --reload --reload-exclude \".venv/*\""
       ],
       "port": 8002
     }
