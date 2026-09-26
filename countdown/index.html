@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Countdown</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Playfair+Display:wght@600;800&family=Great+Vibes&family=Bungee&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600&family=Inter:wght@400;600;800&family=Playfair+Display:wght@600;800&family=Great+Vibes&family=Bungee&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg-from: #6D28D9; --bg-to: #DB2777; --text: #FFFFFF; --accent: #FDE047; --card: #4C1D95;
@@ -34,6 +34,11 @@
     #hero { font-size: clamp(4rem, 14vw, 7rem); line-height: 1; margin-bottom: 8px; }
     #hero:not(:empty) { animation: pop .7s cubic-bezier(.2, 1.6, .4, 1); }
     h1 { font-family: var(--title-font); font-size: clamp(2rem, 7vw, 3.5rem); margin: 8px 0; font-weight: 800; }
+    /* Home screen, before a theme is picked: a clean, friendly sans at a calmer size. */
+    body:not([data-font]) h1 {
+      font-family: "Poppins", system-ui, sans-serif; font-weight: 600;
+      font-size: clamp(1.5rem, 4vw, 2.1rem); letter-spacing: -.01em;
+    }
     body[data-font=script] h1 { font-weight: 400; font-size: clamp(2.6rem, 9vw, 4.6rem); }
     #tagline { color: var(--text); opacity: .9; font-weight: 600; font-size: 1.1rem; margin: 0 0 32px; letter-spacing: .02em; }
     #out { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
@@ -71,7 +76,7 @@
     <button type="submit" id="go">Start countdown</button>
   </form>
   <div id="hero" hidden></div>
-  <h1 id="title">Countdown</h1>
+  <h1 id="title">Something fun to look forward to?</h1>
   <p id="tagline"></p>
   <div id="out" hidden>
     <div class="unit"><div class="num" id="d">0</div><div class="lbl">Days</div></div>
@@ -79,7 +84,7 @@
     <div class="unit"><div class="num" id="m">0</div><div class="lbl">Minutes</div></div>
     <div class="unit"><div class="num" id="s">0</div><div class="lbl">Seconds</div></div>
   </div>
-  <p id="msg">Tell me the occasion and the date.</p>
+  <p id="msg"></p>
 </main>
 <script>
   const $ = (id) => document.getElementById(id);
